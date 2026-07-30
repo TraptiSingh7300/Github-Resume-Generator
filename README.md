@@ -1,5 +1,7 @@
 # 🚀 GitHub Resume Generator
 
+[Live Link](https://traptisingh7300.github.io/Github-Resume-Generator/)
+
 A lightweight, responsive web application that instantly converts any public GitHub profile into a clean, developer-focused resume using the **GitHub REST API**.
 
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)
