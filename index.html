@@ -50,6 +50,11 @@
       font-size: 0.95rem;
     }
     button:hover { background: #2ea043; }
+    button.pdf-btn {
+      background: #1f6beb;
+      display: none; /* Initially hidden until information is fetched */
+    }
+    button.pdf-btn:hover { background: #388bfd; }
     
     .resume-card {
       background: #161b22;
@@ -77,6 +82,37 @@
     .project-stats { font-size: 0.75rem; color: #8b949e; display: flex; gap: 12px; }
     
     .status { text-align: center; color: #f85149; font-size: 0.9rem; display: none; margin-bottom: 16px; }
+
+    /* Print styles to clean up output when generating PDF */
+    @media print {
+      h1, p.subtitle, .search-box, .status, button {
+        display: none !important;
+      }
+      body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+      }
+      .container { max-width: 100% !important; }
+      .resume-card {
+        display: block !important;
+        border: none !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+      }
+      .user-info h2, .section-title, .project-card h4 a { color: #000000 !important; }
+      .user-info p, .meta, .project-card p, .project-stats { color: #333333 !important; }
+      .skill-badge {
+        background: #f0f0f0 !important;
+        color: #000000 !important;
+        border: 1px solid #ccc !important;
+      }
+      .project-card {
+        background: #ffffff !important;
+        border: 1px solid #ddd !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -87,6 +123,7 @@
     <div class="search-box">
       <input type="text" id="usernameInput" placeholder="Enter GitHub username (e.g. TraptiSingh7300)...">
       <button onclick="generateResume()">Generate</button>
+      <button onclick="downloadPDF()" id="downloadBtn" class="pdf-btn">📄 Save as PDF</button>
     </div>
 
     <div id="status" class="status"></div>
@@ -119,18 +156,22 @@
       const username = document.getElementById('usernameInput').value.trim();
       const statusEl = document.getElementById('status');
       const resumeCard = document.getElementById('resumeCard');
+      const downloadBtn = document.getElementById('downloadBtn');
 
       if (!username) {
         statusEl.innerText = "Please enter a GitHub username.";
         statusEl.style.color = "#f85149";
         statusEl.style.display = "block";
+        downloadBtn.style.display = "none";
         return;
       }
 
+      // Hide card & download button while fetching
       statusEl.innerText = "Fetching data from GitHub REST API...";
       statusEl.style.color = "#58a6ff";
       statusEl.style.display = "block";
       resumeCard.style.display = "none";
+      downloadBtn.style.display = "none";
 
       try {
         // Fetch user profile info
@@ -206,13 +247,20 @@
           });
         }
 
+        // Show Resume Card and Download PDF Button only after successful fetch
         statusEl.style.display = "none";
         resumeCard.style.display = "block";
+        downloadBtn.style.display = "inline-block";
       } catch (err) {
         statusEl.style.color = "#f85149";
         statusEl.innerText = `Error: ${err.message}`;
         statusEl.style.display = "block";
+        downloadBtn.style.display = "none";
       }
+    }
+
+    function downloadPDF() {
+      window.print();
     }
   </script>
 </body>
