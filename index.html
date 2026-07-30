@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitHub Resume Generator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #0d1117;
+      color: #c9d1d9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+    .container { width: 100%; max-width: 750px; }
+    h1 { color: #58a6ff; text-align: center; margin-bottom: 8px; }
+    p.subtitle { text-align: center; color: #8b949e; margin-bottom: 24px; font-size: 0.95rem; }
+    
+    .search-box {
+      background: #161b22;
+      border: 1px solid #30363d;
+      padding: 20px;
+      border-radius: 8px;
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    input {
+      flex: 1;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      color: #c9d1d9;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    input:focus { outline: none; border-color: #58a6ff; }
+    button {
+      background: #238636;
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    button:hover { background: #2ea043; }
+    
+    .resume-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 30px;
+      display: none;
+    }
+    .header { display: flex; align-items: center; gap: 20px; border-bottom: 1px solid #30363d; padding-bottom: 20px; margin-bottom: 20px; }
+    .avatar { width: 80px; height: 80px; border-radius: 50%; border: 2px solid #58a6ff; }
+    .user-info h2 { color: #f0f6fc; font-size: 1.5rem; }
+    .user-info p.handle { color: #58a6ff; font-size: 0.9rem; margin-bottom: 6px; }
+    .user-info p.bio { font-style: italic; color: #8b949e; font-size: 0.9rem; }
+    .meta { display: flex; flex-wrap: wrap; gap: 15px; font-size: 0.85rem; color: #8b949e; margin-top: 8px; }
+    
+    .section-title { color: #f0f6fc; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .skills-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+    .skill-badge { background: rgba(56, 139, 253, 0.15); color: #58a6ff; border: 1px solid rgba(56, 139, 253, 0.4); padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-family: monospace; }
+    
+    .projects-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+    .project-card { background: #0d1117; border: 1px solid #30363d; padding: 14px; border-radius: 6px; }
+    .project-card h4 a { color: #58a6ff; text-decoration: none; }
+    .project-card h4 a:hover { text-decoration: underline; }
+    .project-card p { font-size: 0.85rem; color: #8b949e; margin: 6px 0; }
+    .project-stats { font-size: 0.75rem; color: #8b949e; display: flex; gap: 12px; }
+    
+    .status { text-align: center; color: #f85149; font-size: 0.9rem; display: none; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 GitHub Resume Generator</h1>
+    <p class="subtitle">Convert GitHub profiles into clean developer resumes</p>
+
+    <div class="search-box">
+      <input type="text" id="usernameInput" placeholder="Enter GitHub username (e.g. TraptiSingh7300)...">
+      <button onclick="generateResume()">Generate</button>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <div id="resumeCard" class="resume-card">
+      <div class="header">
+        <img id="avatar" class="avatar" src="" alt="Avatar">
+        <div class="user-info">
+          <h2 id="name">Name</h2>
+          <p id="handle" class="handle">@username</p>
+          <p id="bio" class="bio">Bio</p>
+          <div class="meta">
+            <span id="location">📍 Location</span>
+            <span id="company">🏢 Company</span>
+            <span id="followers">👥 Followers: 0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">🛠️ Skills & Technologies</div>
+      <div id="skills" class="skills-container"></div>
+
+      <div class="section-title">📌 Featured Top Projects</div>
+      <div id="projects" class="projects-grid"></div>
+    </div>
+  </div>
+
+  <script>
+    async function generateResume() {
+      const username = document.getElementById('usernameInput').value.trim();
+      const statusEl = document.getElementById('status');
+      const resumeCard = document.getElementById('resumeCard');
+
+      if (!username) {
+        statusEl.innerText = "Please enter a GitHub username.";
+        statusEl.style.color = "#f85149";
+        statusEl.style.display = "block";
+        return;
+      }
+
+      statusEl.innerText = "Fetching data from GitHub REST API...";
+      statusEl.style.color = "#58a6ff";
+      statusEl.style.display = "block";
+      resumeCard.style.display = "none";
+
+      try {
+        // Fetch user profile info
+        const userRes = await fetch(`https://api.github.com/users/${username}`);
+        if (userRes.status === 404) {
+          throw new Error(`User "${username}" not found.`);
+        }
+        if (!userRes.ok) {
+          throw new Error(`GitHub API Error: ${userRes.statusText}`);
+        }
+        const user = await userRes.json();
+
+        // Fetch user public repositories (up to 100 per page to sort by stars)
+        const reposRes = await fetch(`https://api.github.com/users/${username}/repos?per_page=100&sort=updated`);
+        if (!reposRes.ok) {
+          throw new Error(`Failed to fetch repositories.`);
+        }
+        const repos = await reposRes.json();
+
+        // Populate User Header
+        document.getElementById('avatar').src = user.avatar_url || '';
+        document.getElementById('name').innerText = user.name || user.login;
+        document.getElementById('handle').innerText = `@${user.login}`;
+        document.getElementById('bio').innerText = user.bio || "Software Developer";
+        document.getElementById('location').innerText = `📍 ${user.location || 'Remote'}`;
+        document.getElementById('company').innerText = `🏢 ${user.company || 'Independent Developer'}`;
+        document.getElementById('followers').innerText = `👥 Followers: ${user.followers || 0}`;
+
+        // Sort Repositories by Star Count and pick Top 6
+        const topRepos = repos
+          .filter(repo => !repo.fork) // Exclude forks for better portfolio representation
+          .sort((a, b) => b.stargazers_count - a.stargazers_count)
+          .slice(0, 6);
+
+        // Collect Skills & Render Projects
+        const skillsSet = new Set();
+        const projectsContainer = document.getElementById('projects');
+        projectsContainer.innerHTML = '';
+
+        topRepos.forEach(repo => {
+          if (repo.language) {
+            skillsSet.add(repo.language);
+          }
+          if (repo.topics && Array.isArray(repo.topics)) {
+            repo.topics.forEach(topic => skillsSet.add(topic));
+          }
+
+          const card = document.createElement('div');
+          card.className = 'project-card';
+          card.innerHTML = `
+            <h4><a href="${repo.html_url}" target="_blank">${repo.name}</a></h4>
+            <p>${repo.description || 'No description provided.'}</p>
+            <div class="project-stats">
+              <span>🏷️ ${repo.language || 'N/A'}</span>
+              <span>⭐ ${repo.stargazers_count || 0}</span>
+              <span>🍴 ${repo.forks_count || 0}</span>
+            </div>
+          `;
+          projectsContainer.appendChild(card);
+        });
+
+        // Populate Skills Badges
+        const skillsContainer = document.getElementById('skills');
+        skillsContainer.innerHTML = '';
+        if (skillsSet.size === 0) {
+          skillsContainer.innerHTML = '<span style="color:#8b949e; font-size: 0.85rem;">No primary languages detected.</span>';
+        } else {
+          skillsSet.forEach(skill => {
+            const badge = document.createElement('span');
+            badge.className = 'skill-badge';
+            badge.innerText = skill;
+            skillsContainer.appendChild(badge);
+          });
+        }
+
+        statusEl.style.display = "none";
+        resumeCard.style.display = "block";
+      } catch (err) {
+        statusEl.style.color = "#f85149";
+        statusEl.innerText = `Error: ${err.message}`;
+        statusEl.style.display = "block";
+      }
+    }
+  </script>
+</body>
+</html>
